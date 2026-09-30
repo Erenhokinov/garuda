@@ -16,11 +16,12 @@ in
 
   programs.command-not-found.enable = false;
 
-  garuda.mokka.enable = true;
+  garuda.mokka.enable = false;
+  garuda.dr460nized.enable = true;
   garuda.gaming.enable = true;
   garuda.performance-tweaks.enable = true;
   garuda.btrfs-maintenance.enable = true;
-    home-manager.users."garuda" = {
+    home-manager.users."garuda" = { config, lib, pkgs, ... }: {
     imports = [ inputs.wayvibes.nixosModules.default ];
 
     services.wayvibes = {
@@ -28,6 +29,11 @@ in
       soundpack = "${inputs.wayvibes}/soundpacks/nk-cream";
       volume = 2;
     };
+
+systemd.user.services.wayvibes.Service.ExecStart = lib.mkForce ''
+  ${config.services.wayvibes.package}/bin/wayvibes ${config.services.wayvibes.soundpack} -v ${toString config.services.wayvibes.volume} --device-name "SEMICO   USB Gaming Keyboard "
+'';
+
   };
 
   garuda.impermanence.enable = true;
@@ -77,24 +83,42 @@ in
       ];
 
       theme = spicePkgs.themes.catppuccin;
-      colorScheme = "frappe";
+      colorScheme = "mocha";
     };
+
+  programs.git = {
+  enable = true;
+  userName = "Erenhokinov";
+  userEmail = "rlazarenko843@gmail.com";
+  };
 
   programs.gamemode.enable = true;
   programs.ydotool.enable = true;
   services.flatpak.enable = true;
 
-    lib.mkForce = {
     zramSwap = {
                 enable = true;
                 priority = 100;
-                memoryPercent = 150;
+                memoryPercent = lib.mkForce 150;
                 swapDevices = 1;
                 algorithm = "zstd";
               };
-	      };
 
-  systemd.services.cpu-freq-cap = {
+     nix.settings = {
+     auto-optimise-store = true;
+     experimental-features = ["nix-command" "flakes"];
+     trusted-users = [ "root" "garuda" ];
+     };
+
+     nix.gc = {
+     automatic = true;
+     dates = "daily";
+     options = "--delete-older-than 2d";
+     };
+    
+    services.fstrim.enable = true;
+
+    systemd.services.cpu-freq-cap = {
     description = "Enable boost but cap CPU frequency at 3.1GHz";
     wantedBy = [ "multi-user.target" ];
 
@@ -105,7 +129,7 @@ in
         echo 1 > /sys/devices/system/cpu/cpufreq/boost
         for cpu in /sys/devices/system/cpu/cpu*/cpufreq; do
           echo performance > "$cpu/scaling_governor"
-          echo 2900000 > "$cpu/scaling_max_freq"
+          echo 4000000 > "$cpu/scaling_max_freq"
         done
       '';
     };
@@ -144,18 +168,23 @@ in
     };
   };
 
-  environment.persistence."/persist".users."garuda".directories = [
-    ".mozilla"                          
-    ".config/vesktop"                   
-    ".config/spotify"                   
-    ".config/rustdesk"                  
-    ".local/share/Steam/config"         
-    ".local/share/Steam/userdata"       
-    ".local/share/materialgram"         
-    ".var/app/org.vinegarhq.Sober"       
-    "Gaming"                            
-  ];
-
+environment.persistence."/persist".users."garuda".directories = [
+  ".config/vesktop"
+  ".config/spotify"
+  ".config/rustdesk"
+  ".local/share/Steam/config"
+  ".local/share/Steam/userdata"
+  ".local/share/materialgram"
+  ".var/app/org.vinegarhq.Sober"
+  ".local/share/flatpak"
+  ".local/share/xdg-desktop-portal"
+  "Gaming"
+  ".local/bin"
+  "venvs"
+   ".vscode-shared"
+   ".vscode"
+  ".local/share/PrismLauncher"
+];
   environment.systemPackages = with pkgs; [
     git
     ydotool
@@ -172,6 +201,7 @@ in
   ];
 
   networking.hostName = "garuda";
+  networking.nameservers = [ "1.1.1.1" "8.8.8.8" "2606:4700:4700::1111" ];
   time.timeZone = "Europe/Moscow";
   i18n.defaultLocale = "en_US.UTF-8";
 
