@@ -86,7 +86,7 @@ systemd.user.services.wayvibes.Service.ExecStart = lib.mkForce ''
       colorScheme = "mocha";
     };
 
-  programs.git = {
+  programs.git.config = {
   enable = true;
   userName = "Erenhokinov";
   userEmail = "rlazarenko843@gmail.com";
